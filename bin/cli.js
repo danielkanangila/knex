@@ -153,21 +153,12 @@ function invoke(env) {
         configOverrides.stub = stub;
       }
 
-      // Open interactive prompt terminal if the option -i
-      // is given else generate migration with the given name
-      if (cmdObj.interactive || cmdObj.editor) {
-        instance.migrate.interactiveMake(name, configOverrides, {
-          interactive: cmdObj.interactive,
-          editor: cmdObj.editor,
-        });
-      } else {
-        instance.migrate
-          .make(name, configOverrides)
-          .then((name) => {
-            success(color.green(`Created Migration: ${name}`));
-          })
-          .catch(exit);
-      }
+      instance.migrate
+        .make(name, configOverrides, cmdObj)
+        .then((name) => {
+          success(color.green(`Created Migration: ${name}`));
+        })
+        .catch(exit);
     });
 
   commander
