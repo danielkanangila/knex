@@ -4,6 +4,7 @@ up = (knex) ->
   <% if (d.tableName) { %>
   knex.schema.createTable "<%= d.tableName %>": t ->
     t.increments()
+    <% if (d.columns) { %><%= d.columns %><% } %>
     t.timestamp()
   <% } %>
 

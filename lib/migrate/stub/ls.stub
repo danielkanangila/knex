@@ -3,6 +3,7 @@ exports.up = (knex, Promise) ->
   <% if (d.tableName) { %>
   knex.schema.create-table "<%= d.tableName %>", (t) ->
     t.increments!
+    <% if (d.columns) { %><%= d.columns %><% } %>
     t.timestamp!
   <% } %>
 

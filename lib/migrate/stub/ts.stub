@@ -4,7 +4,8 @@ import * as Knex from "knex";
 export async function up(knex: Knex): Promise<Knex.SchemaBuilder> {
     return knex.schema.createTable("<%= d.tableName %>", (t: Knex.AlterTableBuilder) => {
         t.increments();
-        t.timestamps();
+        <% if (d.columns) { %><%= d.columns %><% } %>
+        t.timestamps(true, true);
     });
 }
 <% } else { %>

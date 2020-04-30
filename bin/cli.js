@@ -32,6 +32,7 @@ async function openKnexfile(configPath) {
 
 async function initKnex(env, opts) {
   checkLocalModule(env);
+
   if (process.cwd() !== env.cwd) {
     process.chdir(env.cwd);
     console.log(
@@ -49,7 +50,11 @@ async function initKnex(env, opts) {
     ? await openKnexfile(env.configPath)
     : mkConfigObj(opts);
 
-  const resolvedConfig = resolveEnvironmentConfig(opts, env.configuration, env.configPath);
+  const resolvedConfig = resolveEnvironmentConfig(
+    opts,
+    env.configuration,
+    env.configPath
+  );
   const knex = require(env.modulePath);
   return knex(resolvedConfig);
 }
@@ -135,7 +140,8 @@ function invoke(env) {
       `--stub [<relative/path/from/knexfile>|<name>]`,
       'Specify the migration stub to use. If using <name> the file must be located in config.migrations.directory'
     )
-    .action(async (name) => {
+    .option('-i, --interactive', 'Open interactive cmd')
+    .action(async (name, cmdObj) => {
       const opts = commander.opts();
       opts.client = opts.client || 'sqlite3'; // We don't really care about client when creating migrations
       const instance = await initKnex(env, opts);
@@ -147,12 +153,21 @@ function invoke(env) {
         configOverrides.stub = stub;
       }
 
-      instance.migrate
-        .make(name, configOverrides)
-        .then((name) => {
-          success(color.green(`Created Migration: ${name}`));
-        })
-        .catch(exit);
+      // Open interactive prompt terminal if the option -i
+      // is given else generate migration with the given name
+      if (cmdObj.interactive || cmdObj.editor) {
+        instance.migrate.interactiveMake(name, configOverrides, {
+          interactive: cmdObj.interactive,
+          editor: cmdObj.editor,
+        });
+      } else {
+        instance.migrate
+          .make(name, configOverrides)
+          .then((name) => {
+            success(color.green(`Created Migration: ${name}`));
+          })
+          .catch(exit);
+      }
     });
 
   commander
@@ -273,17 +288,13 @@ function invoke(env) {
 
   commander
     .command('migrate:unlock')
-    .description(
-      '        Forcibly unlocks the migrations lock table.'
-    )
+    .description('        Forcibly unlocks the migrations lock table.')
     .action(() => {
       initKnex(env, commander.opts())
         .then((instance) => instance.migrate.forceFreeMigrationsLock())
         .then(() => {
           success(
-            color.green(
-              `Succesfully unlocked the migrations lock table`
-            )
+            color.green(`Succesfully unlocked the migrations lock table`)
           );
         })
         .catch(exit);
